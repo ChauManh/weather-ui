@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import { createAccount } from '../services/userApi';
+import { useLoading } from '../contexts/LoadingContext';
+import { useAlert } from '../contexts/AlertContext';
 
 export default function SignUp() {
+  const { showLoading, hideLoading } = useLoading();
+  const { showAlert } = useAlert();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -11,12 +16,20 @@ export default function SignUp() {
   const isFormValid =
     username.trim() !== '' && email.trim() !== '' && password.trim() !== '' && password === confirm;
 
-  //   const navigate = useNavigate();
-  const handleSubmit = (e: React.FormEvent) => {
+  const navigate = useNavigate();
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) return;
     // TODO: gọi API đăng ký
-    // navigate('/sign-in');
+    showLoading();
+    const result = await createAccount(username, email, password);
+    if (result.statusCode === 200) {
+      showAlert('success', result.message);
+      navigate('/sign-in');
+    } else {
+      showAlert('error', result.message);
+    }
+    hideLoading();
   };
 
   return (

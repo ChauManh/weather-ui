@@ -1,13 +1,37 @@
 import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
+import { login } from '../services/authApi';
+import { useLoading } from '../contexts/LoadingContext';
+import { useAlert } from '../contexts/AlertContext';
 
 export default function SignIn() {
   const [showForm, setShowForm] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const isFormValid = username.trim() !== '' && password.trim() !== '';
+  const { showLoading, hideLoading } = useLoading();
+  const { showAlert } = useAlert();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isFormValid) return;
+
+    showLoading();
+    const res = await login(username, password);
+    hideLoading();
+
+    if (res.statusCode === 200) {
+      showAlert('success', 'Login successfully!');
+      // localStorage.setItem('accessToken', res.result!.accessToken);
+      // Sau đó chuyển hướng
+      navigate('/');
+    } else {
+      showAlert('error', res.message);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-700">
@@ -45,7 +69,7 @@ export default function SignIn() {
               </Link>
             </>
           ) : (
-            <form className="w-full flex flex-col gap-4" onSubmit={e => e.preventDefault()}>
+            <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>
               <h2 className="w-full text-2xl md:text-3xl font-bold text-yellow-400 mb-2 text-center">
                 Log in
               </h2>
