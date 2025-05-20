@@ -4,7 +4,9 @@ import type { CurrentWeather } from '../types/currentWeather';
 import { formatDate } from '../utils/dateUtils';
 
 export default function CurrentWeatherCard({
+  cityName,
   temperature,
+  weather_description,
   cur_timestamp,
   feels_like,
   pressure,
@@ -22,7 +24,7 @@ export default function CurrentWeatherCard({
         <div className="flex items-center gap-2">
           <WiDaySunny className="text-3xl text-yellow-400" />
           <div>
-            <h3 className="text-white text-lg font-semibold">{''}</h3>
+            <h3 className="text-white text-lg font-semibold">{cityName}</h3>
             <p className="text-sm text-white">{formatDate(cur_timestamp)}</p>
           </div>
         </div>
@@ -35,7 +37,7 @@ export default function CurrentWeatherCard({
           {Math.round(temperature)}
           <sup>°C</sup>
         </span>
-        <p className="mt-1 text-2xl text-white/80 capitalize">{''}</p>
+        <p className="mt-1 text-2xl text-white/80 capitalize">{weather_description}</p>
         <p className="mt-2 text-xl text-white/80">Feels like {Math.round(feels_like)}°C</p>
       </div>
 
