@@ -42,7 +42,7 @@ export default function Home() {
   const [hourlyForecasts, setHourlyForecasts] = useState<HourlyForecast[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
   const [page, setPage] = useState(1);
-  const limit = 12;
+  const limit = 6;
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -64,7 +64,7 @@ export default function Home() {
         setCurrentWeather(res.result);
         setActiveTab('Current');
       } else {
-        showAlert('error', res.message);
+        showAlert('error', 'Please select a valid city in suggestion list');
       }
     },
     [selectedCityId, showAlert]
@@ -162,7 +162,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mt-6 h-[450px]">
+        <div className="mt-6 h-[420px]">
           {activeTab === 'Hourly' && (
             <div ref={scrollRef} className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
               {hourlyForecasts.map((item, i) => (
