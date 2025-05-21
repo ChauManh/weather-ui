@@ -13,3 +13,16 @@ export function formatDate(timestamp: number): string {
   const yyyy = date.getFullYear();
   return `${weekday} ${mm}/${dd}/${yyyy}`;
 }
+
+export function formatHourAndDate(timestamp: number): string {
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleString('en-US', {
+    weekday: 'short', // ví dụ: Mon, Tue
+    year: 'numeric', // 2025
+    month: '2-digit', // 05
+    day: '2-digit', // 19
+    hour: '2-digit', // 08 PM
+    minute: '2-digit',
+    hour12: true, // 12-hour format với AM/PM
+  });
+}

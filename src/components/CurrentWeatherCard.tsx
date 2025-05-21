@@ -1,6 +1,6 @@
 // src/components/CurrentWeatherCard.tsx
 import { WiDaySunny } from 'react-icons/wi';
-import type { CurrentWeather } from '../types/currentWeather';
+import type { CurrentWeather } from '../types/weather/currentWeather';
 import { formatDate } from '../utils/dateUtils';
 
 export default function CurrentWeatherCard({
