@@ -1,21 +1,29 @@
 import { useState, useMemo, useEffect, useRef, useCallback, useTransition } from 'react';
-import CurrentWeatherCard from '../components/CurrentWeatherCard';
+import React from 'react';
+import SummaryCurrentWeather from '../components/SummaryCurrentWeather';
 import AlertHistory from '../components/AlertHistory';
 import SearchBar from '../components/SearchBar';
-import type { CurrentWeather } from '../types/weather/currentWeather';
-import { getCurrentWeatherById, getHourlyForecastWeatherById } from '../services/weatherApi';
+import HourlyWeatherCard from '../components/HourlyWeatherCard';
+import DailyWeatherCard from '../components/DailyWeatherCard';
 import { useAlert } from '../contexts/AlertContext';
-import { suggestCity } from '../services/cityApi';
-import { debounce } from 'lodash';
-import { removeVietnameseTones } from '../utils/textUtils';
-import type { CitySuggestion } from '../types/city/citySuggestion';
-import WeatherCard from '../components/WeatherCard';
-import type { HourlyForecast } from '../types/weather/hourlyForecastWeather';
-import React from 'react';
 
-// Memoize heavy components to prevent unnecessary re-renders
+import {
+  getCurrentWeatherById,
+  getHourlyForecastWeatherById,
+  getDailyForecastWeatherById,
+} from '../services/weatherApi';
+import { suggestCity } from '../services/cityApi';
+import { removeVietnameseTones } from '../utils/textUtils';
+import { debounce } from 'lodash';
+
+import type { CitySuggestion } from '../types/city/citySuggestion';
+import type { CurrentWeather } from '../types/weather/currentWeather';
+import type { HourlyForecast } from '../types/weather/hourlyForecastWeather';
+import type { DailyForecast } from '../types/weather/dailyForecastWeather';
+
 const MemoizedSearchBar = React.memo(SearchBar);
-const MemoizedWeatherCard = React.memo(WeatherCard);
+const MemoizedHourlyCard = React.memo(HourlyWeatherCard);
+const MemoizedDailyCard = React.memo(DailyWeatherCard);
 
 export default function Home() {
   const defaultWeather: CurrentWeather = {
@@ -34,48 +42,31 @@ export default function Home() {
     icon: '',
   };
 
-  const [activeTab, setActiveTab] = useState<'History' | 'Current' | 'Hourly' | 'Daily'>('Current');
   const { showAlert } = useAlert();
+
+  const [activeTab, setActiveTab] = useState<'History' | 'Hourly' | 'Daily'>('Hourly');
   const [city, setCity] = useState('');
+  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
   const [currentWeather, setCurrentWeather] = useState<CurrentWeather>(defaultWeather);
   const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
   const [hourlyForecasts, setHourlyForecasts] = useState<HourlyForecast[]>([]);
-  const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
+  const [dailyForecasts, setDailyForecasts] = useState<DailyForecast[]>([]);
+
   const [page, setPage] = useState(1);
   const limit = 6;
   const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const handleSelect = useCallback(
-    async (selected: CitySuggestion) => {
-      if (selected.city_id === selectedCityId) return;
-      setCity(`${selected.city_name}, ${selected.country_name}`);
-      setSelectedCityId(selected.city_id);
-      setHourlyForecasts([]);
-      setPage(1);
-      setHasMore(true);
-      const res = await getCurrentWeatherById(selected.city_id);
-      if (res.statusCode === 200 && res.result) {
-        showAlert('info', res.message);
-        setCurrentWeather(res.result);
-        setActiveTab('Current');
-      } else {
-        showAlert('error', 'Please select a valid city in suggestion list');
-      }
-    },
-    [selectedCityId, showAlert]
-  );
-
-  // Debounced suggestion fetch; heavy text transform separated
   const debouncedFetch = useMemo(
     () =>
       debounce(async (cleaned: string) => {
         const res = await suggestCity(cleaned);
         if (res.statusCode === 200 && res.result) setSuggestions(res.result);
+        else showAlert('error', res.message);
       }, 500),
     []
   );
@@ -86,6 +77,32 @@ export default function Home() {
     if (cleaned.length < 2) return;
     startTransition(() => debouncedFetch(cleaned));
   };
+
+  const handleSelect = useCallback(
+    async (selected: CitySuggestion) => {
+      if (selected.city_id === selectedCityId) {
+        setCity(`${selected.city_name}, ${selected.country_name}`);
+        return;
+      }
+
+      setCity(`${selected.city_name}, ${selected.country_name}`);
+      setSelectedCityId(selected.city_id);
+      setHourlyForecasts([]);
+      setDailyForecasts([]);
+      setPage(1);
+      setHasMore(true);
+
+      const res = await getCurrentWeatherById(selected.city_id);
+      if (res.statusCode === 200 && res.result) {
+        setCurrentWeather(res.result);
+        showAlert('info', res.message);
+        setActiveTab('Hourly');
+      } else {
+        showAlert('error', 'Please select a valid city in suggestion list');
+      }
+    },
+    [selectedCityId, showAlert]
+  );
 
   const fetchHourly = useCallback(
     async (pageToFetch: number) => {
@@ -105,12 +122,25 @@ export default function Home() {
     [selectedCityId, showAlert]
   );
 
-  // Load first page when switching to Hourly
-  useEffect(() => {
-    if (activeTab === 'Hourly' && selectedCityId && hourlyForecasts.length === 0) fetchHourly(1);
-  }, [activeTab, selectedCityId, fetchHourly, hourlyForecasts.length]);
+  const fetchDaily = useCallback(async () => {
+    if (!selectedCityId) return;
+    const res = await getDailyForecastWeatherById(selectedCityId);
+    if (res.statusCode === 200 && res.result) {
+      setDailyForecasts(res.result);
+    } else {
+      showAlert('error', res.message);
+    }
+  }, [selectedCityId, showAlert]);
 
-  // Infinite scroll with IntersectionObserver
+  useEffect(() => {
+    if (activeTab === 'Hourly' && selectedCityId && hourlyForecasts.length === 0) {
+      fetchHourly(1);
+    }
+    if (activeTab === 'Daily' && selectedCityId && dailyForecasts.length === 0) {
+      fetchDaily();
+    }
+  }, [activeTab, selectedCityId]);
+
   useEffect(() => {
     if (activeTab !== 'Hourly') return;
     const container = scrollRef.current;
@@ -126,8 +156,36 @@ export default function Home() {
     return () => observer.disconnect();
   }, [activeTab, hasMore, isLoading, page, fetchHourly]);
 
-  // Clean up debounce on unmount
   useEffect(() => () => debouncedFetch.cancel(), [debouncedFetch]);
+
+  const renderContent = () => {
+    if (activeTab === 'Hourly') {
+      return (
+        <div ref={scrollRef} className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
+          {hourlyForecasts.map((item, i) => (
+            <MemoizedHourlyCard key={i} data={item} />
+          ))}
+          {isLoading && <p className="text-center text-white">Loading...</p>}
+          {!hasMore && hourlyForecasts.length > 0 && (
+            <p className="text-center text-white/70 text-sm">No more data.</p>
+          )}
+          <div ref={bottomRef} />
+        </div>
+      );
+    }
+
+    if (activeTab === 'Daily') {
+      return (
+        <div className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
+          {dailyForecasts.map((item, i) => (
+            <MemoizedDailyCard key={i} data={item} />
+          ))}
+        </div>
+      );
+    }
+
+    return null;
+  };
 
   return (
     <div className="flex flex-col md:flex-row flex-1 gap-6 h-full p-6">
@@ -145,7 +203,7 @@ export default function Home() {
 
         {currentWeather.cityName && (
           <div className="mt-4 flex gap-4 justify-center">
-            {['History', 'Current', 'Hourly', 'Daily'].map(tab => (
+            {['History', 'Hourly', 'Daily'].map(tab => (
               <button
                 key={tab}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,25 +220,11 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mt-6 h-[420px]">
-          {activeTab === 'Hourly' && (
-            <div ref={scrollRef} className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
-              {hourlyForecasts.map((item, i) => (
-                <MemoizedWeatherCard key={i} data={item} />
-              ))}
-              {isLoading && <p className="text-center text-white">Loading...</p>}
-              {!hasMore && hourlyForecasts.length > 0 && (
-                <p className="text-center text-white/70 text-sm">No more data.</p>
-              )}
-              <div ref={bottomRef} />
-            </div>
-          )}
-          {/* xử lý các tab khác */}
-        </div>
+        <div className="mt-6 h-[420px]">{renderContent()}</div>
       </section>
 
       <div className="w-full md:w-1/3 flex flex-col gap-6 h-full">
-        <CurrentWeatherCard {...currentWeather} />
+        <SummaryCurrentWeather {...currentWeather} />
         <AlertHistory />
       </div>
     </div>

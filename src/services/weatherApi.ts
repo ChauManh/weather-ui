@@ -2,11 +2,12 @@ import axiosInstance from './axiosInstance';
 import type { ApiResponse } from '../types/api';
 import type { CurrentWeather } from '../types/weather/currentWeather';
 import type { HourlyForecast } from '../types/weather/hourlyForecastWeather';
+import type { DailyForecast } from '../types/weather/dailyForecastWeather';
 
 const getCurrentWeatherById = async (city_id: number): Promise<ApiResponse<CurrentWeather>> => {
   try {
     const res = await axiosInstance.get<ApiResponse<CurrentWeather>>('/weather', {
-      params: { city_id: city_id },
+      params: { city_id },
     });
     return res.data;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,4 +38,21 @@ const getHourlyForecastWeatherById = async (
   }
 };
 
-export { getCurrentWeatherById, getHourlyForecastWeatherById };
+const getDailyForecastWeatherById = async (
+  city_id: number
+): Promise<ApiResponse<DailyForecast[]>> => {
+  try {
+    const res = await axiosInstance.get('/weather/forecast/daily', {
+      params: { city_id },
+    });
+    return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.data) {
+      return error.response.data;
+    }
+    throw error;
+  }
+};
+
+export { getCurrentWeatherById, getHourlyForecastWeatherById, getDailyForecastWeatherById };
