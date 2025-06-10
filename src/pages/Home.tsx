@@ -5,12 +5,15 @@ import AlertHistory from '../components/AlertHistory';
 import SearchBar from '../components/SearchBar';
 import HourlyWeatherCard from '../components/HourlyWeatherCard';
 import DailyWeatherCard from '../components/DailyWeatherCard';
+import HistoryWeatherCard from '../components/HistoryWeatherCard';
+
 import { useAlert } from '../contexts/AlertContext';
 
 import {
   getCurrentWeatherById,
   getHourlyForecastWeatherById,
   getDailyForecastWeatherById,
+  getHistoryWeatherById,
 } from '../services/weatherApi';
 import { suggestCity } from '../services/cityApi';
 import { removeVietnameseTones } from '../utils/textUtils';
@@ -20,10 +23,12 @@ import type { CitySuggestion } from '../types/city/citySuggestion';
 import type { CurrentWeather } from '../types/weather/currentWeather';
 import type { HourlyForecast } from '../types/weather/hourlyForecastWeather';
 import type { DailyForecast } from '../types/weather/dailyForecastWeather';
+import type { HistoryWeather } from '../types/weather/historyWeather';
 
 const MemoizedSearchBar = React.memo(SearchBar);
 const MemoizedHourlyCard = React.memo(HourlyWeatherCard);
 const MemoizedDailyCard = React.memo(DailyWeatherCard);
+const MemoizedHistoryCard = React.memo(HistoryWeatherCard);
 
 export default function Home() {
   const defaultWeather: CurrentWeather = {
@@ -51,6 +56,7 @@ export default function Home() {
   const [suggestions, setSuggestions] = useState<CitySuggestion[]>([]);
   const [hourlyForecasts, setHourlyForecasts] = useState<HourlyForecast[]>([]);
   const [dailyForecasts, setDailyForecasts] = useState<DailyForecast[]>([]);
+  const [historyWeathers, setHistoryWeathers] = useState<HistoryWeather[]>([]);
 
   const [page, setPage] = useState(1);
   const limit = 6;
@@ -132,12 +138,25 @@ export default function Home() {
     }
   }, [selectedCityId, showAlert]);
 
+  const fetchHistory = useCallback(async () => {
+    if (!selectedCityId) return;
+    const res = await getHistoryWeatherById(selectedCityId);
+    if (res.statusCode === 200 && res.result) {
+      setHistoryWeathers(res.result);
+    } else {
+      showAlert('error', res.message);
+    }
+  }, [selectedCityId, showAlert]);
+
   useEffect(() => {
     if (activeTab === 'Hourly' && selectedCityId && hourlyForecasts.length === 0) {
       fetchHourly(1);
     }
     if (activeTab === 'Daily' && selectedCityId && dailyForecasts.length === 0) {
       fetchDaily();
+    }
+    if (activeTab === 'History' && selectedCityId && dailyForecasts.length === 0) {
+      fetchHistory();
     }
   }, [activeTab, selectedCityId]);
 
@@ -179,6 +198,16 @@ export default function Home() {
         <div className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
           {dailyForecasts.map((item, i) => (
             <MemoizedDailyCard key={i} data={item} />
+          ))}
+        </div>
+      );
+    }
+
+    if (activeTab === 'History') {
+      return (
+        <div className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
+          {historyWeathers.map((item, i) => (
+            <MemoizedHistoryCard key={i} data={item} />
           ))}
         </div>
       );

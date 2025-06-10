@@ -3,6 +3,7 @@ import type { ApiResponse } from '../types/api';
 import type { CurrentWeather } from '../types/weather/currentWeather';
 import type { HourlyForecast } from '../types/weather/hourlyForecastWeather';
 import type { DailyForecast } from '../types/weather/dailyForecastWeather';
+import type { HistoryWeather } from '../types/weather/historyWeather';
 
 const getCurrentWeatherById = async (city_id: number): Promise<ApiResponse<CurrentWeather>> => {
   try {
@@ -55,4 +56,24 @@ const getDailyForecastWeatherById = async (
   }
 };
 
-export { getCurrentWeatherById, getHourlyForecastWeatherById, getDailyForecastWeatherById };
+const getHistoryWeatherById = async (city_id: number): Promise<ApiResponse<HistoryWeather[]>> => {
+  try {
+    const res = await axiosInstance.get('/weather/history', {
+      params: { city_id },
+    });
+    return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.data) {
+      return error.response.data;
+    }
+    throw error;
+  }
+};
+
+export {
+  getCurrentWeatherById,
+  getHourlyForecastWeatherById,
+  getDailyForecastWeatherById,
+  getHistoryWeatherById,
+};
