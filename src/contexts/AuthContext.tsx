@@ -32,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error: unknown) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const err = error as { message?: string };
+        throw new Error(err.message || 'Failed to fetch user profile');
       } finally {
         setLoading(false); // Đảm bảo luôn chạy
       }
