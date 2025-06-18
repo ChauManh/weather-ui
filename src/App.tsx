@@ -1,14 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { publicRoute } from './routes';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { publicRoute, privateRoute } from './routes';
 import DefaultLayout from './layouts/DefaultLayout';
+import { useAuth } from './contexts/AuthContext';
 
 const App = () => {
-  // const isAuthenticated = () => {
-  //   return !!localStorage.getItem('access_token');
-  // };
-
-  // const isLoggedIn = isAuthenticated();
-
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <div className="text-center p-10">Đang kiểm tra đăng nhập...</div>;
   return (
     <Router>
       <div className="App">
@@ -34,33 +31,29 @@ const App = () => {
             );
           })}
 
-          {/* {privateRoute.map((route, index) => {
+          {privateRoute.map((route, index) => {
             const Page = route.component;
-            let Layout = DefaultLayout;
-
-            if (route.Layout) {
-              Layout = route.Layout;
-            } else if (route.Layout === null) {
-              Layout = Fragment;
-            }
+            const Layout =
+              route.Layout === null
+                ? ({ children }: { children: React.ReactNode }) => <>{children}</>
+                : route.Layout || DefaultLayout;
 
             return (
               <Route
                 key={index}
                 path={route.path}
                 element={
-                  isLoggedIn ? (
+                  isAuthenticated ? (
                     <Layout>
                       <Page />
                     </Layout>
                   ) : (
-                    <Navigate to="/" replace />
+                    <Navigate to="/sign-in" replace />
                   )
                 }
               />
             );
-          })} */}
-          {/* <Route path="*" element={<NotFound />} /> */}
+          })}
         </Routes>
       </div>
     </Router>

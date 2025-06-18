@@ -5,13 +5,16 @@ import App from './App.tsx';
 import { AlertProvider } from './contexts/AlertContext.tsx';
 import { LoadingProvider } from './contexts/LoadingContext.tsx';
 import GlobalOverlay from './components/GlobalOverlay.tsx';
+import { AuthProvider } from './contexts/AuthContext.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <LoadingProvider>
       <AlertProvider>
-        <GlobalOverlay />
-        <App />
+        <AuthProvider>
+          <GlobalOverlay />
+          <App />
+        </AuthProvider>
       </AlertProvider>
     </LoadingProvider>
   </StrictMode>

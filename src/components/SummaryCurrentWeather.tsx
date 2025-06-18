@@ -29,7 +29,7 @@ export default function SummaryCurrentWeather({
   return (
     <div className="flex flex-col bg-gradient-to-br from-sky-800/40 to-black/30 backdrop-blur-md rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition duration-300">
       {/* Header */}
-      <div className="flex items-center justify-between px-6">
+      <div className="flex items-center justify-between px-6 pt-2">
         <div className="flex items-center gap-4">
           {icon && (
             <img
@@ -43,7 +43,9 @@ export default function SummaryCurrentWeather({
             <p className="text-sm text-white/80">Current, {formatDate(cur_timestamp)}</p>
           </div>
         </div>
-        <button className="text-white/60 text-2xl hover:text-white transition">⋮</button>
+        <button className="text-white/60 text-2xl hover:text-white transition cursor-pointer">
+          ⋮
+        </button>
       </div>
 
       {/* Nhiệt độ hiện tại */}

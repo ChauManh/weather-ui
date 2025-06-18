@@ -1,35 +1,49 @@
 import axios from 'axios';
-// import { refreshToken } from './authApi';
+import { refreshToken } from './authApi';
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
+  withCredentials: true, // Rất quan trọng để gửi cookie (access_token)
 });
 
+// Request interceptor (không cần gắn Authorization nếu dùng cookie)
 axiosInstance.interceptors.request.use(
   config => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+    // Bạn có thể log config nếu muốn debug
     return config;
   },
   error => Promise.reject(error)
 );
 
-// axiosInstance.interceptors.response.use(
-//   response => response,
-//   async error => {
-//     if (error.response.status === 401) {
-//       const res = await refreshToken();
-//       if (res.EC === 0) {
-//         localStorage.setItem('access_token', res.result.access_token);
-//         error.config.headers['Authorization'] = `Bearer ${res.result.access_token}`;
-//         return axiosInstance(error.config); // Thực hiện lại request với token mới
-//       }
-//     }
-//     return Promise.reject(error);
-//   }
-// );
+// Response interceptor – auto refresh nếu gặp lỗi 401
+axiosInstance.interceptors.response.use(
+  response => response,
+  async error => {
+    const originalRequest = error.config;
+
+    // Đường dẫn KHÔNG nên auto-refresh
+    const noRefreshRoutes = ['/auth/login', '/auth/refresh'];
+
+    const shouldSkip = noRefreshRoutes.some(route => originalRequest.url?.includes(route));
+
+    if (error.response?.status === 401 && !originalRequest._retry && !shouldSkip) {
+      originalRequest._retry = true;
+
+      try {
+        const res = await refreshToken();
+        if (res?.statusCode === 200) {
+          return axiosInstance(originalRequest);
+        }
+      } catch (refreshErr) {
+        window.location.href = '/sign-in';
+        return Promise.reject(refreshErr);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export default axiosInstance;

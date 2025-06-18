@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { FcGoogle } from 'react-icons/fc';
 import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
-import { login } from '../services/authApi';
 import { useLoading } from '../contexts/LoadingContext';
 import { useAlert } from '../contexts/AlertContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SignIn() {
   const [showForm, setShowForm] = useState(false);
@@ -13,6 +13,7 @@ export default function SignIn() {
   const isFormValid = username.trim() !== '' && password.trim() !== '';
   const { showLoading, hideLoading } = useLoading();
   const { showAlert } = useAlert();
+  const { handleLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,16 +21,19 @@ export default function SignIn() {
     if (!isFormValid) return;
 
     showLoading();
-    const res = await login(username, password);
-    hideLoading();
-
-    if (res.statusCode === 200) {
-      showAlert('success', 'Login successfully!');
-      // localStorage.setItem('accessToken', res.result!.accessToken);
-      // Sau đó chuyển hướng
-      navigate('/');
-    } else {
-      showAlert('error', res.message);
+    try {
+      const response = await handleLogin(username, password);
+      if (response.statusCode === 200) {
+        showAlert('success', 'Login successfully!');
+        navigate('/');
+      } else {
+        showAlert('error', response.message);
+      }
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      showAlert('error', err.message || 'An error occurred during login');
+    } finally {
+      hideLoading();
     }
   };
 

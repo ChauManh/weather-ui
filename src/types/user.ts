@@ -1,6 +1,11 @@
 export interface User {
-  id: string;
-  username: string;
+  userId: number;
+  fullName: string;
+  userName: string;
   email: string;
-  // …các trường khác
+  avatar: string;
+  currentCity: string;
+  language: string;
+  measurementType: string;
+  timezone: string;
 }

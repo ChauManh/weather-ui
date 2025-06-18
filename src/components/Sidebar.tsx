@@ -5,7 +5,7 @@ import { BiBell } from 'react-icons/bi';
 import { IoMdSettings } from 'react-icons/io';
 import { IoMdClose } from 'react-icons/io';
 import { useState } from 'react';
-// import classNames from 'classnames';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavItem {
   label: string;
@@ -15,12 +15,13 @@ interface NavItem {
 }
 
 export default function Sidebar() {
+  const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const path = location.pathname.toLowerCase();
 
-  const items: NavItem[] = [
+  const fullItems: NavItem[] = [
     {
       label: 'Profile',
       path: '/profile',
@@ -46,6 +47,25 @@ export default function Sidebar() {
       isActive: path.startsWith('/setting'),
     },
   ];
+
+  // Nếu chưa đăng nhập → chỉ có Weather và Login
+  const guestItems: NavItem[] = [
+    {
+      label: 'Weather',
+      path: '/',
+      Icon: TiWeatherPartlySunny,
+      isActive: path === '/',
+    },
+    {
+      label: 'Login',
+      path: '/sign-in',
+      Icon: AiOutlineUser,
+      isActive: path.startsWith('/sign-in'),
+    },
+  ];
+
+  // Cuối cùng chọn items theo điều kiện
+  const items = isAuthenticated ? fullItems : guestItems;
 
   const handleNavigate = (to: string) => {
     navigate(to);
