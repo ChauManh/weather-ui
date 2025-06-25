@@ -38,4 +38,17 @@ const refreshToken = async () => {
   return res.data;
 };
 
-export { login, logout, refreshToken };
+const checkAuthentication = async () => {
+  try {
+    const res = await axiosInstance.get<ApiResponse>('/auth/me');
+    return res.data;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    if (error.response?.data) {
+      return error.response.data as ApiResponse;
+    }
+    throw error;
+  }
+};
+
+export { login, logout, refreshToken, checkAuthentication };

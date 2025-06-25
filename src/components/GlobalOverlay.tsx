@@ -2,18 +2,22 @@ import { useLoading } from '../contexts/LoadingContext';
 import { useAlert } from '../contexts/AlertContext';
 
 export default function GlobalOverlay() {
-  const { isLoading } = useLoading();
+  const { isLoading, loadingMessage } = useLoading();
   const { alert, clearAlert } = useAlert();
 
   if (!isLoading && !alert) return null;
 
   return (
     <>
+      {/* Loading overlay */}
       {isLoading && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex flex-col items-center justify-center z-50 space-y-4">
           <div className="loader border-4 border-t-transparent border-white rounded-full w-12 h-12 animate-spin"></div>
+          <p className="text-white text-sm font-medium">{loadingMessage}</p>
         </div>
       )}
+
+      {/* Alert message */}
       {alert && (
         <div className="fixed bottom-4 right-4 z-50">
           <div className="max-w-xs bg-white bg-opacity-80 backdrop-blur-md rounded-xl shadow-lg p-4 flex items-start space-x-3 animate-slide-in">

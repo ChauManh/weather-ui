@@ -49,7 +49,7 @@ export default function Home() {
 
   const { showAlert } = useAlert();
 
-  const [activeTab, setActiveTab] = useState<'History' | 'Hourly' | 'Daily'>('Hourly');
+  const [activeTab, setActiveTab] = useState<'History' | 'Hourly' | 'Daily'>();
   const [city, setCity] = useState('');
   const [selectedCityId, setSelectedCityId] = useState<number | null>(null);
   const [currentWeather, setCurrentWeather] = useState<CurrentWeather>(defaultWeather);
@@ -70,9 +70,17 @@ export default function Home() {
   const debouncedFetch = useMemo(
     () =>
       debounce(async (cleaned: string) => {
-        const res = await suggestCity(cleaned);
-        if (res.statusCode === 200 && res.result) setSuggestions(res.result);
-        else showAlert('error', res.message);
+        try {
+          const res = await suggestCity(cleaned);
+          if (res.statusCode === 200 && res.result) {
+            setSuggestions(res.result);
+          } else {
+            showAlert('error', res.message);
+          }
+        } catch (error) {
+          // console.error('Error fetching city suggestions:', error);
+          showAlert('error', error?.message);
+        }
       }, 500),
     []
   );
@@ -130,22 +138,26 @@ export default function Home() {
 
   const fetchDaily = useCallback(async () => {
     if (!selectedCityId) return;
+    setIsLoading(true);
     const res = await getDailyForecastWeatherById(selectedCityId);
     if (res.statusCode === 200 && res.result) {
       setDailyForecasts(res.result);
     } else {
       showAlert('error', res.message);
     }
+    setIsLoading(false);
   }, [selectedCityId, showAlert]);
 
   const fetchHistory = useCallback(async () => {
     if (!selectedCityId) return;
+    setIsLoading(true);
     const res = await getHistoryWeatherById(selectedCityId);
     if (res.statusCode === 200 && res.result) {
       setHistoryWeathers(res.result);
     } else {
       showAlert('error', res.message);
     }
+    setIsLoading(false);
   }, [selectedCityId, showAlert]);
 
   useEffect(() => {
@@ -178,16 +190,21 @@ export default function Home() {
   useEffect(() => () => debouncedFetch.cancel(), [debouncedFetch]);
 
   const renderContent = () => {
+    const baseClass = 'h-full overflow-y-auto pr-2 custom-scroll space-y-4';
+
     if (activeTab === 'Hourly') {
       return (
-        <div ref={scrollRef} className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
+        <div ref={scrollRef} className={baseClass}>
           {hourlyForecasts.map((item, i) => (
             <MemoizedHourlyCard key={i} data={item} />
           ))}
+
           {isLoading && <p className="text-center text-white">Loading...</p>}
-          {!hasMore && hourlyForecasts.length > 0 && (
-            <p className="text-center text-white/70 text-sm">No more data.</p>
+
+          {hourlyForecasts.length === 0 && !isLoading && (
+            <p className="text-center text-white/70 text-sm">No data available.</p>
           )}
+
           <div ref={bottomRef} />
         </div>
       );
@@ -195,20 +212,32 @@ export default function Home() {
 
     if (activeTab === 'Daily') {
       return (
-        <div className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
+        <div className={baseClass}>
           {dailyForecasts.map((item, i) => (
             <MemoizedDailyCard key={i} data={item} />
           ))}
+
+          {isLoading && <p className="text-center text-white">Loading...</p>}
+
+          {dailyForecasts.length === 0 && (
+            <p className="text-center text-white/70 text-sm">No data available.</p>
+          )}
         </div>
       );
     }
 
     if (activeTab === 'History') {
       return (
-        <div className="h-full overflow-y-auto pr-2 custom-scroll space-y-4">
+        <div className={baseClass}>
           {historyWeathers.map((item, i) => (
             <MemoizedHistoryCard key={i} data={item} />
           ))}
+
+          {isLoading && <p className="text-center text-white">Loading...</p>}
+
+          {historyWeathers.length === 0 && (
+            <p className="text-center text-white/70 text-sm">No data available.</p>
+          )}
         </div>
       );
     }
@@ -249,7 +278,7 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mt-6 h-[420px]">{renderContent()}</div>
+        <div className="mt-6 h-[480px]">{renderContent()}</div>
       </section>
 
       <div className="w-full md:w-1/3 flex flex-col gap-6 h-full">

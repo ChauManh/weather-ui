@@ -15,7 +15,7 @@ interface NavItem {
 }
 
 export default function Sidebar() {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -65,7 +65,7 @@ export default function Sidebar() {
   ];
 
   // Cuối cùng chọn items theo điều kiện
-  const items = isAuthenticated ? fullItems : guestItems;
+  const items = user ? fullItems : guestItems;
 
   const handleNavigate = (to: string) => {
     navigate(to);
@@ -96,13 +96,25 @@ ${open ? 'fixed top-0 left-0 h-screen w-64 shadow-lg' : 'hidden'} md:static md:f
 
         {items.map(({ label, path: to, Icon, isActive }) => {
           const colorClass = isActive ? 'text-yellow-400' : 'text-white';
+          const isProfile = label === 'Profile';
+
           return (
             <button
               key={label}
               onClick={() => handleNavigate(to)}
               className="flex flex-col items-center focus:outline-none cursor-pointer hover:opacity-80"
             >
-              <Icon className={`text-3xl transition ${colorClass}`} />
+              {isProfile && user?.avatar ? (
+                <img
+                  src={user.avatar}
+                  alt="avatar"
+                  className={`w-8 h-8 rounded-full border-2 ${
+                    isActive ? 'border-yellow-400' : 'border-white/50'
+                  } object-cover`}
+                />
+              ) : (
+                <Icon className={`text-3xl transition ${colorClass}`} />
+              )}
               <span className={`mt-1 text-xs font-medium transition ${colorClass}`}>{label}</span>
             </button>
           );
