@@ -48,8 +48,8 @@ export default function Profile() {
         showAlert('success', res.message);
       } else showAlert('error', res.message);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
-      showAlert('error', 'Has an error');
+    } catch (error) {
+      showAlert('error', (error as Error)?.message || 'An error occurred');
     } finally {
       hideLoading();
     }
@@ -69,8 +69,8 @@ export default function Profile() {
       } else {
         showAlert('error', res.message || 'Failed to update name');
       }
-    } catch (err) {
-      showAlert('error', err?.message);
+    } catch (error) {
+      showAlert('error', (error as Error)?.message || 'An error occurred');
     } finally {
       hideLoading();
     }

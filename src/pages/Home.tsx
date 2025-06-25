@@ -6,9 +6,7 @@ import SearchBar from '../components/SearchBar';
 import HourlyWeatherCard from '../components/HourlyWeatherCard';
 import DailyWeatherCard from '../components/DailyWeatherCard';
 import HistoryWeatherCard from '../components/HistoryWeatherCard';
-
 import { useAlert } from '../contexts/AlertContext';
-
 import {
   getCurrentWeatherById,
   getHourlyForecastWeatherById,
@@ -79,7 +77,7 @@ export default function Home() {
           }
         } catch (error) {
           // console.error('Error fetching city suggestions:', error);
-          showAlert('error', error?.message);
+          showAlert('error', (error as Error)?.message || 'An error occurred');
         }
       }, 500),
     []
